@@ -1,0 +1,78 @@
+- domains that are entirely separate from each other
+- separate layers for items/tickets and presentation on boards, with clean API each
+- UI on top of that
+
+Tags
+----
+- each item has a list of tags which are used to classify the item and are quite central 
+  to duckboard
+- each tag can either be a name-value pair or a name only, which is just a short form
+  for name=true
+  TAGS = TAG 
+       | TAGS [ \t]*[,;][ \t]* TAG
+XXX sep allowed at end?
+  TAG = NAME EQUALS VALUE
+      | NAME
+  NAME = [a-zA-Z][-a-zA-Z_0-9.?!]*
+  EQUALS = [ \t]*[:=][ \t]*
+  VALUE = [^ \t:=,;]+
+
+Item Layer
+----------
+- each item has a unique (across domain) id
+- each item has a set of standard field, like "archived", "timestamp", "title", "tags",
+  these are part of the "short" form
+- each item can have other fields, which are only visible in the "long" form
+
+- the server exposes a REST API:
+  - GET /api/v1/items/<domain>              list of items in short form and current version
+                                            excluding archived
+  - ...?archived=true                       ...including archived
+  - ...?at=<timestamp>                      version at given time
+  - GET /api/v1/items/<domain>/<id>         get specified item, archived and timestamping as 
+                                            above
+XXX filtering by tags
+  - PUT /api/v1/items/<domain>/<id>         add new version to this item
+  - POST /api/v1/items/<domain>             create new item, returning short form including "id"
+XXX changes since timestamp, with long-poll
+
+- the server can store the items in a flat directory structure:
+  .../store/<domain>/items/<id>/<timestamp>  would be an actual item
+  .../store/<domain>/items/<id>/<latest>     would be a symlink to the current version
+  .../store/<domain>/items/archived/...      contains the same structure again, but for
+                                             archived items
+  .../store/<domain>/lock                    is a filesystem lock taked for writing operations
+                                             on this domain, writing is done in a way that makes
+                                             reading safe in all cases
+- when a item gets updated, the timestamp of the <id> directory is changed, so processes
+  can use that to invalidate local caches, which means multiple processes can run of the same
+  underlying store!
+
+- our store exposes an interface for items:
+  list(:domain, :archived = false) -> [short-item]
+  get(:domain, :id, :at = Nil) -> item
+  put(:domain, :id, :item, :old-timestamp) -> XXX
+  create(:domain, :id, :item) -> short-item
+  get-versions(:domain, :id) -> [short-item]
+
+Sort Layer
+----------
+- each domain can have a set of "sorts", which organises items by tags
+- each sort is a tree, where each node is a sort itself, each node adding constraints
+  to the items that it or the children will contain. 
+- this allows sorting items through the tree into the leaf nodes, items are shown in leaf
+  nodes if they satisfy all predicates towards the root from this leaf
+- the predicates are based on tags 
+XXX what about "archived"?
+- an API allows configuring the sort, as well as getting a list of items sorted
+- the API allows modification of items by moving them from one leaf to another. the server
+  computes the necessary tag changes
+XXX ordering within a sort leaf
+XXX changes with long-poll
+
+Board Layer
+-----------
+- each domain can have a set of "boards"
+- each board consists of a set of widgets, some of which are layout components like grids
+- an important widget represents a sorting from the sort layer as a configurable grid. 
+XXX

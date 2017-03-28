@@ -1,0 +1,21 @@
+#!/usr/bin/env perl6
+
+use v6; 
+
+use lib $*PROGRAM.dirname.IO.child("lib").path;
+
+use Duckboard::Logging;
+use Duckboard::Server;
+use Duckboard::Store;
+
+my $log = Duckboard::Logging.new('main');
+
+$log.info("Setting up duckboard");
+
+my $srv = Duckboard::Server.new;
+my $store = Duckboard::Store.new;
+
+$log.info("Application init complete, starting");
+
+$srv.start;
+
