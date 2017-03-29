@@ -4,7 +4,9 @@ use Duckboard::Logging;
 
 my $log = Duckboard::Logging.new('store');
 
-method new() {
+has $.store-dir;
+
+method new($store-dir) {
     $log.info("Setting up store");
-    return self.bless();
+    return self.bless(store-dir => $store-dir);
 }

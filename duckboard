@@ -10,12 +10,15 @@ use Duckboard::Store;
 
 my $log = Duckboard::Logging.new('main');
 
-$log.info("Setting up duckboard");
+sub MAIN(Int :$port = 6001, Str :$store-dir = 'store') {
 
-my $srv = Duckboard::Server.new;
-my $store = Duckboard::Store.new;
+    $log.info("Setting up duckboard");
 
-$log.info("Application init complete, starting");
+    my $srv = Duckboard::Server.new($port);
+    my $store = Duckboard::Store.new($store-dir);
 
-$srv.start;
+    $log.info("Application init complete, starting");
+
+    $srv.start;
+}
 

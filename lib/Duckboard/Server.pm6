@@ -6,15 +6,15 @@ use Duckboard::Logging;
 
 my $log = Duckboard::Logging.new('server');
 
-has $!httpd = HTTP::Server::Async.new;
+has $.httpd;
 
-method new() {
+method new($port) {
     $log.info("Setting up HTTP server");
-    return self.bless();
+    return self.bless(httpd => HTTP::Server::Async.new(port => $port));
 }
 
 method start {
     $log.info("Starting HTTP server");
-    # XXX different port, do not block?
+    # XXX perhaps should not block?
     $!httpd.listen(True);
 }
