@@ -14,23 +14,24 @@ XXX sep allowed at end?
   TAG = NAME EQUALS VALUE
       | NAME
   NAME = [a-zA-Z][-a-zA-Z_0-9.?!]*
+XXX minux ?! -> easier url encoding
   EQUALS = [ \t]*[:=][ \t]*
   VALUE = [^ \t:=,;]+
+XXX how is a tag filter predicate written? can we make it so that it can be done
+without url-encoding?
 
 Item Layer
 ----------
 - each item has a unique (across domain) id
-- each item has a set of standard field, like "archived", "timestamp", "title", "tags",
+- each item has a set of standard field like "timestamp", "title", "tags",
   these are part of the "short" form
 - each item can have other fields, which are only visible in the "long" form
 
 - the server exposes a REST API:
   - GET /api/v1/items/<domain>              list of items in short form and current version
-                                            excluding archived
-  - ...?archived=true                       ...including archived
   - ...?at=<timestamp>                      version at given time
-  - GET /api/v1/items/<domain>/<id>         get specified item, archived and timestamping as 
-                                            above
+XXX extra filter by tags
+  - GET /api/v1/items/<domain>/<id>         get specified item, timestamping as above
 XXX filtering by tags
   - PUT /api/v1/items/<domain>/<id>         add new version to this item
   - POST /api/v1/items/<domain>             create new item, returning short form including "id"
@@ -39,8 +40,6 @@ XXX changes since timestamp, with long-poll
 - the server can store the items in a flat directory structure:
   .../store/<domain>/items/<id>/<timestamp>  would be an actual item
   .../store/<domain>/items/<id>/<latest>     would be a symlink to the current version
-  .../store/<domain>/items/archived/...      contains the same structure again, but for
-                                             archived items
   .../store/<domain>/lock                    is a filesystem lock taked for writing operations
                                              on this domain, writing is done in a way that makes
                                              reading safe in all cases
@@ -49,11 +48,15 @@ XXX changes since timestamp, with long-poll
   underlying store!
 
 - our store exposes an interface for items:
-  list(:domain, :archived = false) -> [short-item]
+  list(:domain) -> [short-item]
   get(:domain, :id, :at = Nil) -> item
   put(:domain, :id, :item, :old-timestamp) -> XXX
   create(:domain, :id, :item) -> short-item
   get-versions(:domain, :id) -> [short-item]
+
+XXX at some point in the future we could introduce a special "archived" property
+that is used at the store layer to separate the 90% used form the rest, unclear
+at the moment whether that is necesary
 
 Sort Layer
 ----------
@@ -63,12 +66,12 @@ Sort Layer
 - this allows sorting items through the tree into the leaf nodes, items are shown in leaf
   nodes if they satisfy all predicates towards the root from this leaf
 - the predicates are based on tags 
-XXX what about "archived"?
 - an API allows configuring the sort, as well as getting a list of items sorted
 - the API allows modification of items by moving them from one leaf to another. the server
   computes the necessary tag changes
 XXX ordering within a sort leaf
 XXX changes with long-poll
+XXX extra filter directly on arg-line
 
 Board Layer
 -----------

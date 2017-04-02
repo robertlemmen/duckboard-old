@@ -8,5 +8,36 @@ has $.store-dir;
 
 method new($store-dir) {
     $log.info("Setting up store");
-    return self.bless(store-dir => $store-dir);
+    my $ret = self.bless(store-dir => $store-dir);
+    $ret!init;
+    return $ret;
+}
+
+method !init {
+    # XXX mkdir etc
+}
+
+method list-items($domain) {
+    # XXX return list of short items
+    ...
+}
+
+method get-item($domain, $id, $at = Nil) {
+    # XXX return item in question or Nil
+    ...
+}
+
+method put-item($domain, $id, $item, $old-timestamp = Nil) {
+    # XXX may fail apart from exception, return new short-item with timestamp
+    ...
+}
+
+method create-item($domain, $item) {
+    # XXX return short-item with new id
+    ...
+}
+
+method list-versions($domain, $id) {
+    # XXX return list of short-items
+    ...
 }
