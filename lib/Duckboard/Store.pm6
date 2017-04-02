@@ -17,7 +17,8 @@ method !init {
     # XXX mkdir etc
 }
 
-method list-items($domain) {
+# XXX these should probably all be positional arguments
+method list-items($domain, $at = Nil, $filter = Nil) {
     # XXX return list of short items
     ...
 }

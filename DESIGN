@@ -8,17 +8,22 @@ Tags
   to duckboard
 - each tag can either be a name-value pair or a name only, which is just a short form
   for name=true
-  TAGS = TAG 
-       | TAGS [ \t]*[,;][ \t]* TAG
-XXX sep allowed at end?
-  TAG = NAME EQUALS VALUE
-      | NAME
-  NAME = [a-zA-Z][-a-zA-Z_0-9.?!]*
-XXX minux ?! -> easier url encoding
-  EQUALS = [ \t]*[:=][ \t]*
-  VALUE = [^ \t:=,;]+
-XXX how is a tag filter predicate written? can we make it so that it can be done
-without url-encoding?
+- a tag filter string is a set of predicates optionally groiuped and combined
+  with and/or operators. a predicate anc check for presence, absence, value or
+  unequals on a value
+- we want to set this up so that both a tag and a tag filter string can be
+  expressed in a URL unescaped
+
+  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+  tag           = +(unreserved)
+                / +(unreserved) ":" +(unreserved)
+  tags          = tag *( ";" tag)
+  predicate     = tag
+                / "!" tag
+  filter        = predicate
+                / "(" predicate ")"
+                / predicate "+" predicate
+                / predicate "/" predicate
 
 Item Layer
 ----------
@@ -30,9 +35,9 @@ Item Layer
 - the server exposes a REST API:
   - GET /api/v1/items/<domain>              list of items in short form and current version
   - ...?at=<timestamp>                      version at given time
-XXX extra filter by tags
+  - ...?filter=<filter>                     only return items that match filter,
+                                            see above
   - GET /api/v1/items/<domain>/<id>         get specified item, timestamping as above
-XXX filtering by tags
   - PUT /api/v1/items/<domain>/<id>         add new version to this item
   - POST /api/v1/items/<domain>             create new item, returning short form including "id"
 XXX changes since timestamp, with long-poll
@@ -48,7 +53,7 @@ XXX changes since timestamp, with long-poll
   underlying store!
 
 - our store exposes an interface for items:
-  list(:domain) -> [short-item]
+  list(:domain, :filter = Nil) -> [short-item]
   get(:domain, :id, :at = Nil) -> item
   put(:domain, :id, :item, :old-timestamp) -> XXX
   create(:domain, :id, :item) -> short-item
