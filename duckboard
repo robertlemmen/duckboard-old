@@ -12,13 +12,28 @@ my $log = Duckboard::Logging.new('main');
 
 sub MAIN(Int :$port = 6001, Str :$store-dir = 'store') {
 
-    $log.info("Setting up duckboard");
+    $log.info("Initialising duckboard");
 
     my $srv = Duckboard::Server.new($port);
     my $store = Duckboard::Store.new($store-dir);
 
     $log.info("Application init complete, starting");
 
+    $store.start;
     $srv.start;
+
+    $log.info("Application started, serving requests");
+
+    my $shutdown-requested = Promise.new;
+    signal(SIGINT).tap( {
+        $log.info("Signal received, shutting down");
+        $shutdown-requested.keep;
+    } );
+    await $shutdown-requested;
+
+    $srv.stop;
+    $store.stop;
+
+    $log.info("Clean shutdown, exiting");
 }
 

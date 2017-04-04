@@ -40,6 +40,8 @@ Item Layer
   - GET /api/v1/items/<domain>/<id>         get specified item, timestamping as above
   - PUT /api/v1/items/<domain>/<id>         add new version to this item
   - POST /api/v1/items/<domain>             create new item, returning short form including "id"
+  - GET /api/v1/items                       return a list of domains
+  - PUT /api/v1/items/<domain>              create a new domain, no body
 XXX changes since timestamp, with long-poll
 
 - the server can store the items in a flat directory structure:
@@ -48,6 +50,8 @@ XXX changes since timestamp, with long-poll
   .../store/<domain>/lock                    is a filesystem lock taked for writing operations
                                              on this domain, writing is done in a way that makes
                                              reading safe in all cases
+  .../store/lock                             lock used to add to the set of domains
+
 - when a item gets updated, the timestamp of the <id> directory is changed, so processes
   can use that to invalidate local caches, which means multiple processes can run of the same
   underlying store!
