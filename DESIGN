@@ -25,6 +25,8 @@ Tags
                 / predicate "+" predicate
                 / predicate "/" predicate
 
+# XXX allow spaces to make more readable? url-encoded filters could still strip them out...
+
 Item Layer
 ----------
 - each item has a unique (across domain) id

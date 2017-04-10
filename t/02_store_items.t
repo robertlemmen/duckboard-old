@@ -15,9 +15,9 @@ my $store = Duckboard::Store.new("$tmpdir/store");
 $store.start;
 
 # list-items should throw because the domain does not exist
-dies-ok( { $store.list-items('default') }, "stores must throw on list-items for non-existing domain");
-dies-ok( { $store.get-item('default', '0000') }, "stores must throw on get-item for non-existing domain");
-dies-ok( { $store.list-versions('default', '0000') }, "stores must throw on list-versions for non-existing domain");
+dies-ok({ $store.list-items('default') }, "stores must throw on list-items for non-existing domain");
+dies-ok({ $store.get-item('default', '0000') }, "stores must throw on get-item for non-existing domain");
+dies-ok({ $store.list-versions('default', '0000') }, "stores must throw on list-versions for non-existing domain");
 # XXX create/put
 
 # once the domain is created, we should return an empty list
