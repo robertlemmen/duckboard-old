@@ -25,6 +25,11 @@ method list-domains {
     return $!store.list-domains;
 }
 
+method create-domain($domain) {
+    $log.trace("create-domain domain=$domain");
+    return $!store.create-domain($domain);
+}
+
 method list-items($domain, $at = Nil, $filter = Nil) {
     # XXX should probably apply filter here rather than in store
     $log.trace("list-items domain=$domain");

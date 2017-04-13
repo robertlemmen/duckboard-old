@@ -52,6 +52,11 @@ method !mk-error-response($response, $code, $message) {
     $response.close;
 }
 
+method !mk-ok-response($response) {
+    $response.status = 200;
+    $response.close;
+}
+
 method !mk-json-response($response, $data) {
     $response.status = 200;
     $response.headers{'Content-Type'} = 'application/json';
@@ -95,6 +100,11 @@ method !rq-handler($request, $response) {
             # XXX validate query parts at and filter
             my $items = $!logic.list-items($domain);
             self!mk-json-response($response, $items);
+            return;
+        }
+        elsif ($method eq 'PUT') {
+            $!logic.create-domain($domain);
+            self!mk-ok-response($response);
             return;
         }
         else {
