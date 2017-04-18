@@ -109,7 +109,7 @@ method !store-item($domain, $id, $timestamp, $item) {
     close $fh;
 #    # XXX sad that we can't be atomic, this needs handling...
 #    unlink("$!store-dir/$domain/items/$id/latest");
-    symlink("$!store-dir/$domain/items/$id/latest", "$!store-dir/$domain/items/$id/$timestamp");
+    symlink("$!store-dir/$domain/items/$id/$timestamp", "$!store-dir/$domain/items/$id/latest");
     return $store-item;
 }
 
