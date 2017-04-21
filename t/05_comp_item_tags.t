@@ -92,16 +92,14 @@ $item-list = from-json($response.content).map(-> $id {
 });
 is($item-list, <B C D>, "Grouped OR filter returns correct items");
 
-# XXX escaping "+" for now, but need better char for it...
-$response = $client.get("http://0.0.0.0:$port/api/v1/items/test-item-tags?filter=tag1\%2Btag2");
+$response = $client.get("http://0.0.0.0:$port/api/v1/items/test-item-tags?filter=tag1+tag2");
 cmp-ok($response.status, '==', 200, "getting list of items with AND filter suceeds");
 $item-list = from-json($response.content).map(-> $id {
     $id{'title'} 
 });
 is($item-list, <D >, "AND filter returns correct items");
 
-# XXX darn, ! as well!
-$response = $client.get("http://0.0.0.0:$port/api/v1/items/test-item-tags?filter=\%21(tag1/tag3)");
+$response = $client.get("http://0.0.0.0:$port/api/v1/items/test-item-tags?filter=!(tag1/tag3)");
 cmp-ok($response.status, '==', 200, "getting list of items with NOT filter suceeds");
 $item-list = from-json($response.content).map(-> $id {
     $id{'title'} 

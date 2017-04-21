@@ -72,7 +72,7 @@ method !rq-handler($request, $response) {
     my $path = uri-unescape($uri.path);
     # XXX funky, if i line-break before .comb, then the >> breaks...
     # XXX we also need to work out exactly what the character classes should be
-    my $query-args = %(%($uri.query.split('&').comb(/(<[\w\%+]>+) '=' (<[\w\%+\/\(\)\+]>+)/, :match)>>.Slip>>.Str)
+    my $query-args = %(%($uri.query.split('&').comb(/(<[\w\%+]>+) '=' (<[!\w\%+\/\(\)\+]>+)/, :match)>>.Slip>>.Str)
                         .kv.map(-> $arg { uri-unescape($arg) }));
 
     # deal with binary zeroes in method and body, our httpd has bugs!
@@ -101,6 +101,12 @@ method !rq-handler($request, $response) {
         my $domain ~= $0;
         if ($method eq 'GET') {
             # XXX validate query parts at and filter
+
+            # uri-unescape turns '+' into space, which is arguably correct, but we don't need
+            # that here...
+            if ($query-args{'filter'}) {
+                $query-args{'filter'}.subst-mutate(' ', '+');
+            }
             my $items = $!logic.list-items($domain, $query-args{'at'}, $query-args{'filter'});
             self!mk-json-response($response, $items);
             return;

@@ -28,11 +28,6 @@ Tags
                 / predicate "+" predicate
                 / predicate "/" predicate
 
-# XXX "+" is a special character in urls! find better one!
-# XXX "!" as well
-
-# XXX allow spaces to make more readable? url-encoded filters could still strip them out...
-
 Item Layer
 ----------
 - each item has a unique (across domain) id
