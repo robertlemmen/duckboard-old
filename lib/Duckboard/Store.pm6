@@ -3,6 +3,7 @@ unit class Duckboard::Store;
 use JSON::Tiny;
 
 use Duckboard::Logging;
+use X::Duckboard::BadRequest;
 
 my $log = Duckboard::Logging.new('store');
 
@@ -44,7 +45,7 @@ method stop {
 method !refresh-domains-cache($domain = Nil) {
     if ($domain && $!domains-cache{$domain}) {
         # domains can only be added, so if it is in our cache then
-        # the cache is ok for taht item
+        # the cache is ok for that item
         return;
     }
     # we are interested in all domains, so update cache
@@ -75,7 +76,7 @@ method !refresh-items-cache($domain, $item = Nil) {
     my $disk-timestamp = "$!store-dir/$domain/items".IO.modified;
     if ((defined $!items-cache-time{$domain}) && ($disk-timestamp > $!items-cache-time{$domain})) {
         # reload items cache for this domain as it has changed on disk
-        $!domains-cache = {};
+        $!items-cache{$domain} = {};
         for "$!store-dir/$domain/items".IO.dir -> $entry {
             if ($entry.d) {
                 my $item-id = $entry.basename;
@@ -101,14 +102,14 @@ method !load-item($domain, $id, $at = Nil) {
 }
 
 method !store-item($domain, $id, $timestamp, $item) {
-    my $store-item = $item;
+    my $store-item = $item; # XXX make deep copy
     $store-item<id> = $id;
     $store-item<timestamp> = $timestamp;
     my $fh = open("$!store-dir/$domain/items/$id/$timestamp", :w);
     $fh.print(to-json($store-item));
     close $fh;
-#    # XXX sad that we can't be atomic, this needs handling...
-#    unlink("$!store-dir/$domain/items/$id/latest");
+#    # XXX sad that we can't be atomic, this needs handling... do we have a rename()??
+    unlink("$!store-dir/$domain/items/$id/latest");
     symlink("$!store-dir/$domain/items/$id/$timestamp", "$!store-dir/$domain/items/$id/latest");
     return $store-item;
 }
@@ -157,7 +158,7 @@ method create-domain($domain) {
 method list-items($domain, $at = Nil, $filter = Nil) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
-        die "requested domain '$domain' does not exist";
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
     self!refresh-items-cache($domain);
     # XXX at
@@ -169,7 +170,7 @@ method list-items($domain, $at = Nil, $filter = Nil) {
 method get-item($domain, $id, $at = Nil) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
-        die "requested domain '$domain' does not exist";
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
     self!refresh-items-cache($domain, $id);
     if (!$!items-cache{$domain}{$id}) {
@@ -179,18 +180,25 @@ method get-item($domain, $id, $at = Nil) {
 }
 
 method put-item($domain, $id, $item, $old-timestamp = Nil) {
+    # XXX support for old-timestamp
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
-        die "requested domain '$domain' does not exist";
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
-    # XXX may fail apart from exception, return new short-item with timestamp
-    ...
+    self!refresh-items-cache($domain, $id);
+    if (!$!items-cache{$domain}{$id}) {
+        die X::Duckboard::BadRequest.new("requested item '$id' in domain '$domain' does not exist");
+    }
+    my $timestamp = self!make-timestamp;
+    my $stored-item = self!store-item($domain, $id, $timestamp, $item);
+    self!invalidate-items-cache($domain);
+    return self!shorten-item($stored-item);
 }
 
 method create-item($domain, $item) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
-        die "requested domain '$domain' does not exist";
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
     self!refresh-items-cache($domain);
     # XXX validate item constraints
@@ -205,7 +213,7 @@ method create-item($domain, $item) {
 method list-versions($domain, $id) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
-        die "requested domain '$domain' does not exist";
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
     # XXX return list of short-items
     ...

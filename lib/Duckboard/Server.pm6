@@ -95,7 +95,7 @@ method !rq-handler($request, $response) {
         }
     }
     elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w]-[^\/]>+) \/?$/) {
-        my $domain = $0;
+        my $domain ~= $0;
         if ($method eq 'GET') {
             # XXX validate query parts at and filter
             my $items = $!logic.list-items($domain);
@@ -104,6 +104,39 @@ method !rq-handler($request, $response) {
         }
         elsif ($method eq 'PUT') {
             $!logic.create-domain($domain);
+            self!mk-ok-response($response);
+            return;
+        }
+        elsif ($method eq 'POST') {
+            # XXX validate content-type 
+            my $item = from-json($body);
+            my $new-item = $!logic.create-item($domain, $item);
+            self!mk-json-response($response, $new-item);
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w]-[^\/]>+) \/ (<[\w]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        my $id ~= $1;
+        if ($method eq 'GET') {
+            my $item = $!logic.get-item($domain, $id);
+            if (defined $item) {
+                self!mk-json-response($response, $item);
+            }
+            else {
+                self!mk-error-response($response, 404, "Item '$id' in domain '$domain' not found");
+            }
+            return;
+        }
+        elsif ($method eq 'PUT') {
+            # XXX validate content-type 
+            # XXX old-timestamp
+            my $item = from-json($body);
+            $!logic.put-item($domain, $id, $item);
             self!mk-ok-response($response);
             return;
         }
