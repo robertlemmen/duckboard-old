@@ -70,8 +70,10 @@ method !rq-handler($request, $response) {
     my $body = $request.data.decode('UTF-8');
     my $uri = URI.new($request.uri);
     my $path = uri-unescape($uri.path);
-    my $query = uri-unescape($uri.query);
-    my $query-args = %($query.split('&').comb(/(\w+) '=' (\w+)/, :match)>>.Slip>>.Str);
+    # XXX funky, if i line-break before .comb, then the >> breaks...
+    # XXX we also need to work out exactly what the character classes should be
+    my $query-args = %(%($uri.query.split('&').comb(/(<[\w\%+]>+) '=' (<[\w\%+\/\(\)\+]>+)/, :match)>>.Slip>>.Str)
+                        .kv.map(-> $arg { uri-unescape($arg) }));
 
     # deal with binary zeroes in method and body, our httpd has bugs!
     if ($method.starts-with('0'.chr)) {
@@ -81,7 +83,8 @@ method !rq-handler($request, $response) {
         $body = $body.substr(0, *-1);
     }
 
-    $log.trace("$method $path $query");
+    $log.trace("$method $path " ~ $uri.query);
+    $log.trace("## " ~ $query-args.perl);
 
     if ($path ~~ /^ \/api\/v1\/items \/?$/) {
         if ($method eq 'GET') {
@@ -94,15 +97,16 @@ method !rq-handler($request, $response) {
             return;
         }
     }
-    elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w]-[^\/]>+) \/?$/) {
+    elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w-]-[^\/]>+) \/?$/) {
         my $domain ~= $0;
         if ($method eq 'GET') {
             # XXX validate query parts at and filter
-            my $items = $!logic.list-items($domain);
+            my $items = $!logic.list-items($domain, $query-args{'at'}, $query-args{'filter'});
             self!mk-json-response($response, $items);
             return;
         }
         elsif ($method eq 'PUT') {
+            # XXX validate that there is no body
             $!logic.create-domain($domain);
             self!mk-ok-response($response);
             return;
@@ -119,7 +123,7 @@ method !rq-handler($request, $response) {
             return;
         }
     }
-    elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w]-[^\/]>+) \/ (<[\w]-[^\/]>+) \/?$/) {
+    elsif ($path ~~ /^ \/api\/v1\/items\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
         my $domain ~= $0;
         my $id ~= $1;
         if ($method eq 'GET') {

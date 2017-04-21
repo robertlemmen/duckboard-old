@@ -1,6 +1,7 @@
 unit class Duckboard::Logic;
 
 use Duckboard::Logging;
+use Duckboard::Tags;
 use X::Duckboard::BadRequest;
 
 my $log = Duckboard::Logging.new('logic');
@@ -30,12 +31,25 @@ method create-domain($domain) {
     return $!store.create-domain($domain);
 }
 
-method list-items($domain, $at = Nil, $filter = Nil) {
+method list-items($domain, $at = Nil, $filter-spec = Nil) {
     # XXX should probably apply filter here rather than in store
     $log.trace("list-items domain=$domain");
-    # XXX at, filter
-#    die X::Duckboard::BadRequest.new("timestamp in 'at' argument malformed");
-    return $!store.list-items($domain);
+    # XXX at
+    my $filter = Nil;
+    if ($filter-spec) {
+        $log.debug("## using filter $filter-spec");
+        $filter = parse-filter($filter-spec);
+        CATCH {
+            default {
+                die X::Duckboard::BadRequest.new(.Str);
+            }
+        }
+    }
+    my $items = $!store.list-items($domain);
+    if ($filter) {
+        $items = $items.grep({ filter-matches($filter, parse-tags($_{'tags'})) });
+    }
+    return $items;
 }
 
 method create-item($domain, $item) {
@@ -49,7 +63,7 @@ method create-item($domain, $item) {
     if (defined $item{'id'}) {
         die X::Duckboard::BadRequest.new("new item must not have 'id' property");
     }
-    # XXX check title is string and tags is array
+    # XXX check title is string and tags is also a string
     my $ret = $!store.create-item($domain, $item);
     # XXX better logging, also store should not modify input argument but deep copy
     $log.trace("  -> " ~ $ret{'id'});

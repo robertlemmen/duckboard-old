@@ -26,7 +26,7 @@ $srv.start;
 
 my $client = HTTP::Client.new;
 
-plan 24;
+plan 27;
 
 # XXX why does this not work with localhost?
 my $response = $client.get("http://0.0.0.0:$port/api/v1/items");
@@ -108,7 +108,11 @@ cmp-ok($item{'title'}, 'eq', 'test3', "title of updated item is correct");
 cmp-ok($item{'timestamp'}, '>', $old-timestamp, "timestamp of updated item has increased");
 cmp-ok($item{'tags'}, 'eq', 'key:value', "tags property has been updated correctly");
 
-# XXX more stuff!
+$response = $client.get("http://0.0.0.0:$port/api/v1/items/test2");
+ok($response.success, "getting final list of items succeeds");
+my $item-list = from-json($response.content);
+cmp-ok($item-list.elems, '==', 1, "Result contains single item");
+cmp-ok($item-list[0]{'id'}, '==', $test-id, "Listed item has correct id");
 
 $srv.stop;
 $logic.stop;

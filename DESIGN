@@ -1,3 +1,6 @@
+Duckboard Design
+================
+
 - domains that are entirely separate from each other
 - separate layers for items/tickets and presentation on boards, with clean API each
 - UI on top of that
@@ -25,6 +28,9 @@ Tags
                 / predicate "+" predicate
                 / predicate "/" predicate
 
+# XXX "+" is a special character in urls! find better one!
+# XXX "!" as well
+
 # XXX allow spaces to make more readable? url-encoded filters could still strip them out...
 
 Item Layer
@@ -45,6 +51,7 @@ Item Layer
   - GET /api/v1/items                       return a list of domains
   - PUT /api/v1/items/<domain>              create a new domain, no body
 XXX changes since timestamp, with long-poll
+XXX how can we get list of versions for an item? argument? different endpoint?
 
 - the server can store the items in a flat directory structure:
   .../store/<domain>/items/<id>/<timestamp>  would be an actual item

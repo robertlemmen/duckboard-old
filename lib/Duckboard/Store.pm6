@@ -162,9 +162,16 @@ method list-items($domain, $at = Nil, $filter = Nil) {
     }
     self!refresh-items-cache($domain);
     # XXX at
-    # XXX filter
-    # XXX return list of short items, needs mapping
-    return $!items-cache{$domain}.keys.sort;
+    # XXX filter should be done in logic
+
+    my $item-ids = $!items-cache{$domain}.keys.sort;
+    my $items = $item-ids.map(-> $id { 
+        self!load-item($domain, $id, $at)
+    });
+    $items = $items.map(-> $current-item {
+        self!shorten-item($current-item);
+    });
+    return $items;
 }
 
 method get-item($domain, $id, $at = Nil) {
