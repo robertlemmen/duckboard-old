@@ -81,3 +81,8 @@ method get-item($domain, $id, $at = Nil) {
     # XXX handle at
     return $!store.get-item($domain, $id);
 }
+
+method list-sortings($domain) {
+    $log.trace("list-sortings domain=$domain");
+    return $!store.list-sortings($domain);
+}

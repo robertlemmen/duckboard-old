@@ -1,4 +1,3 @@
-#line 1 SETTING::src/Store.pm6
 unit class Duckboard::Store;
 
 use JSON::Tiny;
@@ -225,4 +224,15 @@ method list-versions($domain, $id) {
     # XXX return list of short-items
     ...
 }
-#line 1 SETTING::src/test2354
+
+method list-sortings($domain) {
+    self!refresh-domains-cache($domain);
+    if (!$!domains-cache{$domain}) {
+        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
+    }
+    self!refresh-items-cache($domain);
+    # XXX actual implementation
+    return [];
+    # XXX we should really only deal with objects in here, no matter what they
+    # are
+}

@@ -84,7 +84,6 @@ method !rq-handler($request, $response) {
     }
 
     $log.trace("$method $path " ~ $uri.query);
-    $log.trace("## " ~ $query-args.perl);
 
     if ($path ~~ /^ \/api\/v1\/items \/?$/) {
         if ($method eq 'GET') {
@@ -148,6 +147,18 @@ method !rq-handler($request, $response) {
             my $item = from-json($body);
             $!logic.put-item($domain, $id, $item);
             self!mk-ok-response($response);
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/sortings\/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        if ($method eq 'GET') {
+            my $sortings = $!logic.list-sortings($domain);
+            self!mk-json-response($response, $sortings);
             return;
         }
         else {

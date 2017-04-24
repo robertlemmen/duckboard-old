@@ -44,6 +44,7 @@ Item Layer
   - PUT /api/v1/items/<domain>/<id>         add new version to this item
   - POST /api/v1/items/<domain>             create new item, returning short form including "id"
   - GET /api/v1/items                       return a list of domains
+XXX perhaps listing and creating domains should be under /domains/
   - PUT /api/v1/items/<domain>              create a new domain, no body
 XXX changes since timestamp, with long-poll
 XXX how can we get list of versions for an item? argument? different endpoint?
@@ -73,8 +74,8 @@ at the moment whether that is necesary
 
 Sort Layer
 ----------
-- each domain can have a set of "sorts", which organises items by tags
-- each sort is a tree, where each node is a sort itself, each node adding constraints
+- each domain can have a set of "sortings", which organises items by tags
+- each sort is a tree, where each node is a sorting itself, each node adding constraints
   to the items that it or the children will contain. 
 - this allows sorting items through the tree into the leaf nodes, items are shown in leaf
   nodes if they satisfy all predicates towards the root from this leaf
@@ -84,7 +85,16 @@ Sort Layer
   computes the necessary tag changes
 XXX ordering within a sort leaf
 XXX changes with long-poll
+
+- the API would then look like:
+  - GET /api/v1/sortings/<domain>          list sortings available
+  - GET /api/v1/sortings/<domain>/<id>     get sort specification
+  - PUT /api/v1/sortings/<domain>/<id>     update sort specification, create if
+                                           necessary
+  - GET /api/v1/sorted/<domain>/<id>       get items from this domain sorted
+                                           by sort <id>
 XXX extra filter directly on arg-line
+XXX at
 
 Board Layer
 -----------
