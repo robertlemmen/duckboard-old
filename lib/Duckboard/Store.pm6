@@ -11,16 +11,21 @@ my $log = Duckboard::Logging.new('store');
 
 has $.store-dir; #XXX should this be private? same across other classes
 
+enum Supported-Types <items sortings>;
+
 # we only store whether a domain exists or not, one level
 has $!domains-cache = {};
 has $!domains-cache-time = 0;
 
 # this is keyed by domain at the first level
-# and the cache contains a hash with keys per item
-has $!items-cache = {};
-has $!items-cache-time = {};
+# and the cache contains a hash with keys per 
+has $!objects-cache = {};
+has $!objects-cache-time = {};
+
+# sequence to allocate new ids
 has $!max-item-id = {};
 
+# last timestamp allocated to avoid collisions
 has $!last-timestamp = 0;
 
 method new($store-dir) {
@@ -67,64 +72,56 @@ method !invalidate-domains-cache {
     $!domains-cache-time = 0;
 }
 
-method !refresh-items-cache($domain, $item = Nil) {
-    if ($item && $!items-cache-time{$domain}{$item}) {
+method !refresh-objects-cache($domain, $type, $item = Nil) {
+    if ($item && $!objects-cache-time{$domain}{$type}{$item}) {
         # items can only be added, so if we have something in out cache
         # then the cache is correct
         return;
     }
-    my $disk-timestamp = "$!store-dir/$domain/items".IO.modified;
-    if ((defined $!items-cache-time{$domain}) && ($disk-timestamp > $!items-cache-time{$domain})) {
-        # reload items cache for this domain as it has changed on disk
-        $!items-cache{$domain} = {};
-        for "$!store-dir/$domain/items".IO.dir -> $entry {
+    my $disk-timestamp = "$!store-dir/$domain/$type".IO.modified;
+    if (   (defined $!objects-cache-time{$domain}{$type}) 
+        && ($disk-timestamp > $!objects-cache-time{$domain}{$type})) {
+        # reload objects cache for this domain and type as it has changed on disk
+        $!objects-cache{$domain}{$type} = {};
+        for "$!store-dir/$domain/$type".IO.dir -> $entry {
             if ($entry.d) {
                 my $item-id = $entry.basename;
-                $!items-cache{$domain}{$item-id} = 1;
-                if ($item-id > $!max-item-id{$domain}) {
-                    $!max-item-id{$domain} = $item-id;
+                $!objects-cache{$domain}{$type}{$item-id} = 1;
+                if ($item-id > $!max-item-id{$domain}{$type}) {
+                    $!max-item-id{$domain}{$type} = $item-id;
                 }
             }
         }
-        $!items-cache-time{$domain} = $disk-timestamp;
+        $!objects-cache-time{$domain}{$type} = $disk-timestamp;
     }
 }
 
 # XXX alternatively this could update the cache
-method !invalidate-items-cache($domain) {
-    $!items-cache-time{$domain} = 0;
+method !invalidate-objects-cache($domain, $type) {
+    $!objects-cache-time{$domain}{$type} = 0;
 }
 
-method !load-item($domain, $id, $at = Nil) {
+method !load-object($domain, $type, $id, $at = Nil) {
     # XXX at
     # XXX LRU-caching
-    return from-json("$!store-dir/$domain/items/$id/latest".IO.slurp);
+    return from-json("$!store-dir/$domain/$type/$id/latest".IO.slurp);
 }
 
-method !store-item($domain, $id, $timestamp, $item) {
-    my $store-item = $item; # XXX make deep copy
-    $store-item<id> = $id;
-    $store-item<timestamp> = $timestamp;
-    my $fh = open("$!store-dir/$domain/items/$id/$timestamp", :w);
-    $fh.print(to-json($store-item));
+method !store-object($domain, $type, $id, $timestamp, $object) {
+    my $store-object = $object; # XXX make deep copy
+    $store-object{'id'} = $id;
+    $store-object{'timestamp'} = $timestamp;
+    my $fh = open("$!store-dir/$domain/$type/$id/$timestamp", :w);
+    $fh.print(to-json($store-object));
     close $fh;
 #    # XXX sad that we can't be atomic, this needs handling... do we have a rename()??
-    unlink("$!store-dir/$domain/items/$id/latest");
-    symlink("$!store-dir/$domain/items/$id/$timestamp", "$!store-dir/$domain/items/$id/latest");
-    return $store-item;
+    unlink("$!store-dir/$domain/$type/$id/latest");
+    symlink("$!store-dir/$domain/$type/$id/$timestamp", "$!store-dir/$domain/$type/$id/latest");
+    return $store-object;
 }
 
-method !allocate-id($domain) {
-    return ++$!max-item-id{$domain};
-}
-
-method !shorten-item($item) {
-    my $ret = {};
-    $ret<id> = $item<id>;
-    $ret<title> = $item<title>;
-    $ret<timestamp> = $item<timestamp>;
-    $ret<tags> = $item<tags>;
-    return $ret;
+method !allocate-id($domain, $type) {
+    return ++$!max-item-id{$domain}{$type};
 }
 
 method !make-timestamp {
@@ -148,72 +145,71 @@ method create-domain($domain) {
     self!refresh-domains-cache;
     if (!"$!store-dir/$domain".IO.d) {
         # XXX looks like a bit of a race...
-        mkdir "$!store-dir/$domain/items";
+        for Supported-Types.enums.keys -> $type {
+            mkdir "$!store-dir/$domain/$type";
+        }
         # XXX create lockfile
         self!invalidate-domains-cache;
     }
 }
 
 # XXX these should probably all be positional arguments
-method list-items($domain, $at = Nil) {
+method list-objects($domain, $type, $at = Nil) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
         die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
-    self!refresh-items-cache($domain);
+    self!refresh-objects-cache($domain, $type);
     # XXX at
 
-    my $item-ids = $!items-cache{$domain}.keys.sort;
+    my $item-ids = $!objects-cache{$domain}{$type}.keys.sort;
     my $items = $item-ids.map(-> $id { 
-        self!load-item($domain, $id, $at)
-    });
-    $items = $items.map(-> $current-item {
-        self!shorten-item($current-item);
+        self!load-object($domain, $type, $id, $at)
     });
     return $items;
 }
 
-method get-item($domain, $id, $at = Nil) {
+method get-object($domain, $type, $id, $at = Nil) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
         die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
-    self!refresh-items-cache($domain, $id);
-    if (!$!items-cache{$domain}{$id}) {
+    self!refresh-objects-cache($domain, $type, $id);
+    if (!$!objects-cache{$domain}{$type}{$id}) {
         return Nil;
     }
-    return self!load-item($domain, $id, $at);
+    return self!load-object($domain, $type, $id, $at);
 }
 
-method put-item($domain, $id, $item, $old-timestamp = Nil) {
+method put-object($domain, $type, $id, $item, $old-timestamp = Nil) {
     # XXX support for old-timestamp
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
         die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
-    self!refresh-items-cache($domain, $id);
-    if (!$!items-cache{$domain}{$id}) {
+    self!refresh-objects-cache($domain, $type, $id);
+    if (!$!objects-cache{$domain}{$type}{$id}) {
         die X::Duckboard::BadRequest.new("requested item '$id' in domain '$domain' does not exist");
     }
     my $timestamp = self!make-timestamp;
-    my $stored-item = self!store-item($domain, $id, $timestamp, $item);
-    self!invalidate-items-cache($domain);
-    return self!shorten-item($stored-item);
+    my $stored-item = self!store-object($domain, $type, $id, $timestamp, $item);
+    self!invalidate-objects-cache($domain, $type);
+    return $stored-item;
 }
 
-method create-item($domain, $item) {
+method create-object($domain, $type, $item) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
         die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
-    self!refresh-items-cache($domain);
+    self!refresh-objects-cache($domain, $type);
     # XXX validate item constraints
-    my $new-id = self!allocate-id($domain);
+    my $new-id = self!allocate-id($domain, $type);
     my $timestamp = self!make-timestamp;
     mkdir("$!store-dir/$domain/items/$new-id");
-    my $stored-item = self!store-item($domain, $new-id, $timestamp, $item);
-    self!invalidate-items-cache($domain);
-    return self!shorten-item($stored-item);
+    my $stored-item = self!store-object($domain, $type, $new-id, $timestamp, $item);
+    self!invalidate-objects-cache($domain, $type);
+    return $stored-item;
 }
 
 method list-versions($domain, $id) {
@@ -223,16 +219,4 @@ method list-versions($domain, $id) {
     }
     # XXX return list of short-items
     ...
-}
-
-method list-sortings($domain) {
-    self!refresh-domains-cache($domain);
-    if (!$!domains-cache{$domain}) {
-        die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
-    }
-    self!refresh-items-cache($domain);
-    # XXX actual implementation
-    return [];
-    # XXX we should really only deal with objects in here, no matter what they
-    # are
 }
