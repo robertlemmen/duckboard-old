@@ -32,12 +32,10 @@ method create-domain($domain) {
 }
 
 method list-items($domain, $at = Nil, $filter-spec = Nil) {
-    # XXX should probably apply filter here rather than in store
-    $log.trace("list-items domain=$domain");
+    $log.trace("list-items domain=$domain filter=" ~ ($filter-spec//''));
     # XXX at
     my $filter = Nil;
     if ($filter-spec) {
-        $log.debug("## using filter $filter-spec");
         $filter = parse-filter($filter-spec);
         CATCH {
             default {

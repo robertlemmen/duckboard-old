@@ -61,7 +61,7 @@ XXX how can we get list of versions for an item? argument? different endpoint?
   underlying store!
 
 - our store exposes an interface for items:
-  list(:domain, :filter = Nil) -> [short-item]
+  list(:domain, :at = Nil) -> [short-item]
   get(:domain, :id, :at = Nil) -> item
   put(:domain, :id, :item, :old-timestamp) -> XXX
   create(:domain, :id, :item) -> short-item

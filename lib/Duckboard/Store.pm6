@@ -1,3 +1,4 @@
+#line 1 SETTING::src/Store.pm6
 unit class Duckboard::Store;
 
 use JSON::Tiny;
@@ -155,14 +156,13 @@ method create-domain($domain) {
 }
 
 # XXX these should probably all be positional arguments
-method list-items($domain, $at = Nil, $filter = Nil) {
+method list-items($domain, $at = Nil) {
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
         die X::Duckboard::BadRequest.new("requested domain '$domain' does not exist");
     }
     self!refresh-items-cache($domain);
     # XXX at
-    # XXX filter should be done in logic
 
     my $item-ids = $!items-cache{$domain}.keys.sort;
     my $items = $item-ids.map(-> $id { 
@@ -225,3 +225,4 @@ method list-versions($domain, $id) {
     # XXX return list of short-items
     ...
 }
+#line 1 SETTING::src/test2354
