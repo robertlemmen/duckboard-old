@@ -11,7 +11,7 @@ my $log = Duckboard::Logging.new('store');
 
 has $.store-dir; #XXX should this be private? same across other classes
 
-enum Supported-Types <items sortings>;
+our enum Supported-Types is export <items sortings>;
 
 # we only store whether a domain exists or not, one level
 has $!domains-cache = {};

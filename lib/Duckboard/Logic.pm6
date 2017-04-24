@@ -2,6 +2,7 @@ unit class Duckboard::Logic;
 
 use Duckboard::Logging;
 use Duckboard::Tags;
+use Duckboard::Store;
 use X::Duckboard::BadRequest;
 
 my $log = Duckboard::Logging.new('logic');
@@ -52,8 +53,7 @@ method list-items($domain, $at = Nil, $filter-spec = Nil) {
             }
         }
     }
-    # XXX should use export from Store for 'items'
-    my $items = $!store.list-objects($domain, 'items');
+    my $items = $!store.list-objects($domain, Supported-Types::items);
     if ($filter) {
         $items = $items.grep({ filter-matches($filter, parse-tags($_{'tags'})) });
     }
@@ -75,7 +75,7 @@ method create-item($domain, $item) {
         die X::Duckboard::BadRequest.new("new item must not have 'id' property");
     }
     # XXX check title is string and tags is also a string
-    my $ret = $!store.create-object($domain, 'items', $item);
+    my $ret = $!store.create-object($domain, Supported-Types::items, $item);
     # XXX better logging, also store should not modify input argument but deep copy
     $log.trace("  -> " ~ $ret{'id'});
     return self!shorten-item($ret);
@@ -86,14 +86,14 @@ method put-item($domain, $id, $item, $old-timestamp = Nil) {
     # XXX old-timestamp
     # XXX validations
     # XXX do we even want to return anything? if so, server needs updating
-    my $ret = $!store.put-object($domain, 'items', $id, $item);
+    my $ret = $!store.put-object($domain, Supported-Types::items, $id, $item);
     return self!shorten-item($ret);
 }
 
 method get-item($domain, $id, $at = Nil) {
     $log.trace("get-item domain=$domain id=$id");
     # XXX handle at
-    return $!store.get-object($domain, 'items', $id);
+    return $!store.get-object($domain, Supported-Types::items, $id);
 }
 
 method list-sortings($domain) {
