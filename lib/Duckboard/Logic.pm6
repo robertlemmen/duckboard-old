@@ -31,6 +31,22 @@ method !shorten-item($item) {
     return $ret;
 }
 
+method !validate-item($item) {
+    if (!defined $item{'title'}) {
+        die X::Duckboard::BadRequest.new("new item needs 'title' property");
+    }
+    if (!defined $item{'tags'}) {
+        die X::Duckboard::BadRequest.new("new item needs 'tags' property (but can be empty)");
+    }
+    if (defined $item{'id'}) {
+        die X::Duckboard::BadRequest.new("new item must not have 'id' property");
+    }
+}
+
+method !validate-sorting($sorting) {
+    # XXX implement
+}
+
 method list-domains {
     $log.trace("list-domains");
     return $!store.list-domains;
@@ -65,16 +81,7 @@ method list-items($domain, $at = Nil, $filter-spec = Nil) {
 
 method create-item($domain, $item) {
     $log.trace("create-item domain=$domain item=" ~ $item.perl);
-    if (!defined $item{'title'}) {
-        die X::Duckboard::BadRequest.new("new item needs 'title' property");
-    }
-    if (!defined $item{'tags'}) {
-        die X::Duckboard::BadRequest.new("new item needs 'tags' property (but can be empty)");
-    }
-    if (defined $item{'id'}) {
-        die X::Duckboard::BadRequest.new("new item must not have 'id' property");
-    }
-    # XXX check title is string and tags is also a string
+    self!validate-item($item);
     my $ret = $!store.create-object($domain, Supported-Types::items, $item);
     # XXX better logging, also store should not modify input argument but deep copy
     $log.trace("  -> " ~ $ret{'id'});
@@ -84,7 +91,7 @@ method create-item($domain, $item) {
 method put-item($domain, $id, $item, $old-timestamp = Nil) {
     $log.trace("put-item domain=$domain id=$id");
     # XXX old-timestamp
-    # XXX validations
+    self!validate-item($item);
     # XXX do we even want to return anything? if so, server needs updating
     my $ret = $!store.put-object($domain, Supported-Types::items, $id, $item);
     return self!shorten-item($ret);
@@ -99,4 +106,17 @@ method get-item($domain, $id, $at = Nil) {
 method list-sortings($domain) {
     $log.trace("list-sortings domain=$domain");
     return $!store.list-objects($domain, 'sortings');
+}
+
+method put-sorting($domain, $id, $sorting, $old-timestamp = Nil) {
+    $log.trace("put-sorting domain=$domain id=$id");
+    # XXX old-timestamp
+    self!validate-sorting($sorting);
+    my $ret = $!store.put-object($domain, Supported-Types::sortings, $id, $sorting, create => True);
+}
+
+method get-sorting($domain, $id, $at = Nil) {
+    $log.trace("get-sorting domain=$domain id=$id");
+    # XXX handle at
+    return $!store.get-object($domain, Supported-Types::sortings, $id);
 }

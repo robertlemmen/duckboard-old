@@ -87,7 +87,7 @@ method !refresh-objects-cache($domain, $type, $item = Nil) {
             if ($entry.d) {
                 my $item-id = $entry.basename;
                 $!objects-cache{$domain}{$type}{$item-id} = 1;
-                if ($item-id > $!max-item-id{$domain}{$type}) {
+                if ($item-id > ($!max-item-id{$domain}{$type} // -1)) {
                     $!max-item-id{$domain}{$type} = $item-id;
                 }
             }
@@ -181,7 +181,7 @@ method get-object($domain, $type, $id, $at = Nil) {
     return self!load-object($domain, $type, $id, $at);
 }
 
-method put-object($domain, $type, $id, $item, $old-timestamp = Nil) {
+method put-object($domain, $type, $id, $item, $old-timestamp = Nil, :$create = False) {
     # XXX support for old-timestamp
     self!refresh-domains-cache($domain);
     if (!$!domains-cache{$domain}) {
@@ -189,7 +189,12 @@ method put-object($domain, $type, $id, $item, $old-timestamp = Nil) {
     }
     self!refresh-objects-cache($domain, $type, $id);
     if (!$!objects-cache{$domain}{$type}{$id}) {
-        die X::Duckboard::BadRequest.new("requested item '$id' in domain '$domain' does not exist");
+        if ($create) {
+            mkdir("$!store-dir/$domain/$type/$id");
+        }
+        else {
+            die X::Duckboard::BadRequest.new("requested item '$id' in domain '$domain' does not exist");
+        }
     }
     my $timestamp = self!make-timestamp;
     my $stored-item = self!store-object($domain, $type, $id, $timestamp, $item);
@@ -206,7 +211,7 @@ method create-object($domain, $type, $item) {
     # XXX validate item constraints
     my $new-id = self!allocate-id($domain, $type);
     my $timestamp = self!make-timestamp;
-    mkdir("$!store-dir/$domain/items/$new-id");
+    mkdir("$!store-dir/$domain/$type/$new-id");
     my $stored-item = self!store-object($domain, $type, $new-id, $timestamp, $item);
     self!invalidate-objects-cache($domain, $type);
     return $stored-item;

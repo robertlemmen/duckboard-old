@@ -93,6 +93,8 @@ XXX changes with long-poll
                                            necessary
   - GET /api/v1/sorted/<domain>/<id>       get items from this domain sorted
                                            by sort <id>
+XXX this one accepts PUT without previous existence, the other one doesn't
+    perhaps this should be consistent?
 XXX extra filter directly on arg-line
 XXX at
 

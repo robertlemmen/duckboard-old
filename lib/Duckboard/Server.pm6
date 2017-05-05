@@ -31,6 +31,10 @@ method start {
                     "Request to " ~ $request.uri ~ " failed: " ~ .message);
             }
             default {
+                $log.error("Unexpected exception: " ~ .Str);
+                for .backtrace -> $bt {
+                    $log.warn(chomp($bt.Str));
+                }
                 self!mk-error-response($response, 500, 
                     "Request to " ~ $request.uri ~ " failed: " ~ .Str);
             }
@@ -159,6 +163,30 @@ method !rq-handler($request, $response) {
         if ($method eq 'GET') {
             my $sortings = $!logic.list-sortings($domain);
             self!mk-json-response($response, $sortings);
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/sortings\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        my $id ~= $1;
+        if ($method eq 'GET') {
+            my $sorting = $!logic.get-sorting($domain, $id);
+            if (defined $sorting) {
+                self!mk-json-response($response, $sorting);
+            }
+            else {
+                self!mk-error-response($response, 404, "Sorting '$id' in domain '$domain' not found");
+            }
+            return;
+        }
+        elsif ($method eq 'PUT') {
+            my $sorting = from-json($body);
+            $!logic.put-sorting($domain, $id, $sorting);
+            self!mk-ok-response($response);
             return;
         }
         else {

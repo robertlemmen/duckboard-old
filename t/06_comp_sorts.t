@@ -35,7 +35,23 @@ $response = $client.get("http://0.0.0.0:$port/api/v1/sortings/test");
 ok($response.success, "getting list of sortings succeeds");
 cmp-ok(from-json($response.content), 'eq', [], "list of sortings initially empty");
 
-# XXX
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({title => 'testA'}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 200, "PUTting to create new sorting succeeds");
+
+$response = $client.get("http://0.0.0.0:$port/api/v1/sortings/test");
+ok($response.success, "getting list of sortings succeeds");
+my $data = from-json($response.content);
+cmp-ok($data.elems, '==', 1, "list of sortings has one element");
+$data = $data[0];
+cmp-ok($data{'id'}, 'eq', 1233, "id of new sorting matches");
+
+$response = $client.get("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+ok($response.success, "getting single sorting succeeds");
+$data = from-json($response.content);
+cmp-ok($data{'id'}, 'eq', 1233, "id of new sorting matches");
 
 $srv.stop;
 $logic.stop;
