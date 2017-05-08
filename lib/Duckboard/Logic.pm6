@@ -43,8 +43,37 @@ method !validate-item($item) {
     }
 }
 
-method !validate-sorting($sorting) {
-    # XXX implement
+method !validate-sorting($sorting, :$nid-set = {}) {
+    if (!defined $sorting{'nid'}) {
+        die X::Duckboard::BadRequest.new("sorting needs 'nid' property");
+    }
+    my $nid = $sorting{'nid'};
+
+    if (defined $nid-set{$nid}) {
+        die X::Duckboard::BadRequest.new("sorting node has non-unique nid $nid");
+    }
+    $nid-set{$nid} = 1;
+
+    if (!defined $sorting{'filter'}) {
+        die X::Duckboard::BadRequest.new("sorting node $nid needs 'filter' property");
+    }
+    {
+        my $filter = parse-filter($sorting{'filter'});
+        CATCH {
+            default {
+                die X::Duckboard::BadRequest.new("error on sorting node $nid: " ~ .Str);
+            }
+        }
+    }
+
+    if (defined $sorting{'children'}) {
+        if (!$sorting{'children'} ~~ Array) {
+            die X::Duckboard::BadRequest.new("sorting node $nid has non-array 'children' property");
+        }
+        for @($sorting{'children'}) -> $child {
+            self!validate-sorting($child, nid-set => $nid-set);
+        }
+    }
 }
 
 method list-domains {

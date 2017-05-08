@@ -26,6 +26,8 @@ $srv.start;
 
 my $client = HTTP::Client.new;
 
+plan 15;
+
 my $rq = $client.put;
 $rq.url("http://0.0.0.0:$port/api/v1/items/test");
 my $response = $rq.run;
@@ -37,7 +39,43 @@ cmp-ok(from-json($response.content), 'eq', [], "list of sortings initially empty
 
 $rq = $client.put;
 $rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
-$rq.set-content(to-json({title => 'testA'}));
+$rq.set-content(to-json({filter => ''}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 400, "'nid' is required when creating a new sorting");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root'}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 400, "'filter' is required when creating a new sorting");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root', filter => 'test=234'}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 400, "'filter' must be valid");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root', filter => 'test=234', children => 123}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 400, "'children' must be array");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root', filter => '', children => []}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 200, "PUTting to create new sorting succeeds");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root', filter => '', children => [{ nid => 'root', filter => '' },]}));
+$response = $rq.run;
+cmp-ok($response.status, '==', 400, "nid must be unique");
+
+$rq = $client.put;
+$rq.url("http://0.0.0.0:$port/api/v1/sortings/test/1233");
+$rq.set-content(to-json({nid => 'root', filter => '', children => [{ nid => 'child1', filter => '' },]}));
 $response = $rq.run;
 cmp-ok($response.status, '==', 200, "PUTting to create new sorting succeeds");
 
