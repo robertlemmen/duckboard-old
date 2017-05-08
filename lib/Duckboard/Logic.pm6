@@ -28,6 +28,7 @@ method !shorten-item($item) {
     $ret<title> = $item<title>;
     $ret<timestamp> = $item<timestamp>;
     $ret<tags> = $item<tags>;
+    # XXX should add HATEOS link to full item
     return $ret;
 }
 
@@ -74,6 +75,39 @@ method !validate-sorting($sorting, :$nid-set = {}) {
             self!validate-sorting($child, nid-set => $nid-set);
         }
     }
+}
+
+method !split-match($input, $matcher) {
+    my $matched = [];
+    my $remainder = [];
+    for @($input) -> $item {
+        if ($matcher($item)) {
+            push @($matched), $item;
+        }
+        else {
+            push @($remainder), $item;
+        }
+    }
+    return ($matched, $remainder);
+}
+
+method !sort-items($sorting, $items) {
+    my $filter = parse-filter($sorting{'filter'});
+    my ($matched, $remainder) = self!split-match($items, 
+        { filter-matches($filter, parse-tags($_{'tags'})) } );
+
+    if (defined $sorting{'children'}) {
+        my $items-todo = $matched;
+        my $sorted-result = Nil;
+        for @($sorting{'children'}) -> $child {
+            ($sorted-result, $items-todo) = self!sort-items($child, $items-todo);
+        }
+    }
+    else {
+        $sorting{'items'} = $matched;
+    }
+
+    return ($sorting, $remainder);
 }
 
 method list-domains {
@@ -148,4 +182,19 @@ method get-sorting($domain, $id, $at = Nil) {
     $log.trace("get-sorting domain=$domain id=$id");
     # XXX handle at
     return $!store.get-object($domain, Supported-Types::sortings, $id);
+}
+
+method get-sorted($domain, $id, $at = Nil, $filter-spec = Nil) {
+    $log.trace("get-sorted domain=$domain id=$id");
+    # XXX handle at
+    # XXX filter
+    my $sorting = $!store.get-object($domain, Supported-Types::sortings, $id);
+    if (defined $sorting) {
+        my $items = self.list-items($domain, $at, $filter-spec);
+        my ($sorted, $remaining) = self!sort-items($sorting, $items);
+        return $sorted;
+    }
+    else {
+        return Nil;
+    }
 }

@@ -194,6 +194,25 @@ method !rq-handler($request, $response) {
             return;
         }
     }
+    elsif ($path ~~ /^ \/api\/v1\/sorted\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        my $id ~= $1;
+        # XXX extra filter, at
+        if ($method eq 'GET') {
+            my $sorted = $!logic.get-sorted($domain, $id);
+            if (defined $sorted) {
+                self!mk-json-response($response, $sorted);
+            }
+            else {
+                self!mk-error-response($response, 404, "Sorting '$id' in domain '$domain' not found");
+            }
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
 
     self!mk-error-response($response, 404, "URI path $path does not match any endpoint");
 }

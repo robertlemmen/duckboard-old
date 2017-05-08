@@ -34,7 +34,7 @@ my $response = $rq.run;
 cmp-ok($response.status, '==', 200, "PUTing to create new domain succeeds");
 
 $response = $client.get("http://0.0.0.0:$port/api/v1/items/test-item-tags");
-ok($response.success, "getting list of items from non-existing domain succeeds");
+ok($response.success, "getting list of items from domain succeeds");
 cmp-ok(from-json($response.content), 'eq', [], "item list initially empty");
 
 sub create-item($title, $tags) {
