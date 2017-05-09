@@ -26,7 +26,7 @@ $srv.start;
 
 my $client = HTTP::Client.new;
 
-plan 24;
+plan 29;
 
 my $rq = $client.put;
 $rq.url("http://0.0.0.0:$port/api/v1/items/dom1");
@@ -118,10 +118,19 @@ $response = $client.get("http://0.0.0.0:$port/api/v1/sorted/dom1/123");
 cmp-ok($response.status, '==', 200, "Getting sorted list of items succeeds");
 $sorted = from-json($response.content);
 $item-list = flatten-item-list($sorted);
-is($item-list.keys.sort, <c1 c2 root >, "No extra children returned");
+is($item-list.keys.sort, <c1 c2 root >, "No unexpected children returned");
 is($item-list{'root'}, < >, "No root items are returned in query against sorting with children");
 is($item-list{'c1'}, <B D>, "Correct items are returned on node c1");
 is($item-list{'c2'}, <A C E>, "Correct items are returned on node c2");
+
+$response = $client.get("http://0.0.0.0:$port/api/v1/sorted/dom1/123?filter=!tag3");
+cmp-ok($response.status, '==', 200, "Getting sorted list of items with extra filter succeeds");
+$sorted = from-json($response.content);
+$item-list = flatten-item-list($sorted);
+is($item-list.keys.sort, <c1 c2 root >, "No unexpected children returned");
+is($item-list{'root'}, < >, "No root items are returned in query against sorting with children");
+is($item-list{'c1'}, <B D>, "Correct items are returned on node c1");
+is($item-list{'c2'}, <A C>, "Correct items are returned on node c2 when using cmdline filter");
 
 $srv.stop;
 $logic.stop;

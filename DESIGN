@@ -7,7 +7,7 @@ Duckboard Design
 
 Tags
 ----
-- each item has a list of tags which are used to classify the item and are quite central 
+- each item has a list of tags which are used to classify the item and are quite central
   to duckboard
 - each tag can either be a name-value pair or a name only, which is just a short form
   for name=true
@@ -76,10 +76,10 @@ Sort Layer
 ----------
 - each domain can have a set of "sortings", which organises items by tags
 - each sort is a tree, where each node is a sorting itself, each node adding constraints
-  to the items that it or the children will contain. 
+  to the items that it or the children will contain.
 - this allows sorting items through the tree into the leaf nodes, items are shown in leaf
   nodes if they satisfy all predicates towards the root from this leaf
-- the predicates are based on tags 
+- the predicates are based on tags
 - an API allows configuring the sort, as well as getting a list of items sorted
 - the API allows modification of items by moving them from one leaf to another. the server
   computes the necessary tag changes
@@ -88,6 +88,9 @@ XXX changes with long-poll
 
 - the API would then look like:
   - GET /api/v1/sortings/<domain>          list sortings available
+  - ...?filter=<filter>                    restrict items to those that match this filter
+                                           on top of the filtering/sorting from the
+                                           sorting
   - GET /api/v1/sortings/<domain>/<id>     get sort specification
   - PUT /api/v1/sortings/<domain>/<id>     update sort specification, create if
                                            necessary
@@ -95,12 +98,11 @@ XXX changes with long-poll
                                            by sort <id>
 XXX this one accepts PUT without previous existence, the other one doesn't
     perhaps this should be consistent?
-XXX extra filter directly on arg-line
 XXX at
 
 Board Layer
 -----------
 - each domain can have a set of "boards"
 - each board consists of a set of widgets, some of which are layout components like grids
-- an important widget represents a sorting from the sort layer as a configurable grid. 
+- an important widget represents a sorting from the sort layer as a configurable grid.
 XXX

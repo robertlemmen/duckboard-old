@@ -197,9 +197,16 @@ method !rq-handler($request, $response) {
     elsif ($path ~~ /^ \/api\/v1\/sorted\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
         my $domain ~= $0;
         my $id ~= $1;
-        # XXX extra filter, at
+        # XXX at
+
+        # uri-unescape turns '+' into space, which is arguably correct, but we don't need
+        # that here...
+        if ($query-args{'filter'}) {
+            $query-args{'filter'}.subst-mutate(' ', '+');
+        }
+
         if ($method eq 'GET') {
-            my $sorted = $!logic.get-sorted($domain, $id);
+            my $sorted = $!logic.get-sorted($domain, $id, $query-args{'at'}, $query-args{'filter'});
             if (defined $sorted) {
                 self!mk-json-response($response, $sorted);
             }

@@ -93,7 +93,7 @@ method !split-match($input, $matcher) {
 
 method !sort-items($sorting, $items) {
     my $filter = parse-filter($sorting{'filter'});
-    my ($matched, $remainder) = self!split-match($items, 
+    my ($matched, $remainder) = self!split-match($items,
         { filter-matches($filter, parse-tags($_{'tags'})) } );
 
     if (defined $sorting{'children'}) {
@@ -187,7 +187,7 @@ method get-sorting($domain, $id, $at = Nil) {
 method get-sorted($domain, $id, $at = Nil, $filter-spec = Nil) {
     $log.trace("get-sorted domain=$domain id=$id");
     # XXX handle at
-    # XXX filter
+
     my $sorting = $!store.get-object($domain, Supported-Types::sortings, $id);
     if (defined $sorting) {
         my $items = self.list-items($domain, $at, $filter-spec);
