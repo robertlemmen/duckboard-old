@@ -8,6 +8,7 @@ use Duckboard::Logging;
 use Duckboard::Server;
 use Duckboard::Store;
 use Duckboard::Logic;
+use Duckboard::UI;
 
 my $log = Duckboard::Logging.new('main');
 
@@ -17,12 +18,14 @@ sub MAIN(Int :$port = 6001, Str :$store-dir = 'store') {
 
     my $store = Duckboard::Store.new($store-dir);
     my $logic = Duckboard::Logic.new($store);
-    my $srv = Duckboard::Server.new($port, $logic);
+    my $ui = Duckboard::UI.new($logic);
+    my $srv = Duckboard::Server.new($port, $logic, $ui);
 
     $log.info("Application init complete, starting");
 
     $store.start;
     $logic.start;
+    $ui.start;
     $srv.start;
 
     $log.info("Application started, serving requests");
@@ -35,6 +38,7 @@ sub MAIN(Int :$port = 6001, Str :$store-dir = 'store') {
     await $shutdown-requested;
 
     $srv.stop;
+    $ui.stop;
     $logic.stop;
     $store.stop;
 

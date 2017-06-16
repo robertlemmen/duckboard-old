@@ -77,6 +77,10 @@ method !validate-sorting($sorting, :$nid-set = {}) {
     }
 }
 
+method !validate-board($item) {
+    # XXX
+}
+
 method !split-match($input, $matcher) {
     my $matched = [];
     my $remainder = [];
@@ -168,7 +172,7 @@ method get-item($domain, $id, $at = Nil) {
 
 method list-sortings($domain) {
     $log.trace("list-sortings domain=$domain");
-    return $!store.list-objects($domain, 'sortings');
+    return $!store.list-objects($domain, Supported-Types::sortings);
 }
 
 method put-sorting($domain, $id, $sorting, $old-timestamp = Nil) {
@@ -197,4 +201,22 @@ method get-sorted($domain, $id, $at = Nil, $filter-spec = Nil) {
     else {
         return Nil;
     }
+}
+
+method list-boards($domain) {
+    $log.trace("list-boards domain=$domain");
+    return $!store.list-objects($domain, Supported-Types::boards);
+}
+
+method put-board($domain, $id, $board, $old-timestamp = Nil) {
+    $log.trace("put-board domain=$domain id=$id");
+    # XXX old-timestamp
+    self!validate-board($board);
+    my $ret = $!store.put-object($domain, Supported-Types::boards, $id, $board, create => True);
+}
+
+method get-board($domain, $id, $at = Nil) {
+    $log.trace("get-board domain=$domain id=$id");
+    # XXX handle at
+    return $!store.get-object($domain, Supported-Types::boards, $id);
 }

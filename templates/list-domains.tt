@@ -1,0 +1,8 @@
+<h1>Domains</h1>
+
+<ul>
+[% for dom in domains %]
+<li><a href="/ui/[% dom %]">[% dom %]</a></li>
+[% end %]
+</ul>
+

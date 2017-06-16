@@ -11,7 +11,7 @@ my $log = Duckboard::Logging.new('store');
 
 has $.store-dir; #XXX should this be private? same across other classes
 
-our enum Supported-Types is export <items sortings>;
+our enum Supported-Types is export <items sortings boards>;
 
 # we only store whether a domain exists or not, one level
 has $!domains-cache = {};
@@ -74,21 +74,23 @@ method !invalidate-domains-cache {
 
 method !refresh-objects-cache($domain, $type, $item = Nil) {
     if ($item && $!objects-cache-time{$domain}{$type}{$item}) {
-        # items can only be added, so if we have something in out cache
+        # items can only be added, so if we have something in our cache
         # then the cache is correct
         return;
     }
     my $disk-timestamp = "$!store-dir/$domain/$type".IO.modified;
-    if (   (defined $!objects-cache-time{$domain}{$type}) 
-        && ($disk-timestamp > $!objects-cache-time{$domain}{$type})) {
+    if (   (!defined $!objects-cache-time{$domain}{$type}) 
+        || ($disk-timestamp > $!objects-cache-time{$domain}{$type})) {
         # reload objects cache for this domain and type as it has changed on disk
         $!objects-cache{$domain}{$type} = {};
         for "$!store-dir/$domain/$type".IO.dir -> $entry {
             if ($entry.d) {
                 my $item-id = $entry.basename;
                 $!objects-cache{$domain}{$type}{$item-id} = 1;
-                if ($item-id > ($!max-item-id{$domain}{$type} // -1)) {
-                    $!max-item-id{$domain}{$type} = $item-id;
+                with +$item-id {
+                    if ($item-id > ($!max-item-id{$domain}{$type} // -1)) {
+                        $!max-item-id{$domain}{$type} = $item-id;
+                    }
                 }
             }
         }

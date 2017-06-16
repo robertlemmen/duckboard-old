@@ -4,4 +4,71 @@ use v6;
 
 use lib $*PROGRAM.dirname.IO.child("lib").path;
 
-# XXX duckboard cmdline client
+use HTTP::Client;
+use JSON::Tiny;
+
+my $c = HTTP::Client.new;
+my $host = '0.0.0.0';
+my $port = 6001;
+
+sub list-domains() {
+    my $res = $c.get("http://$host:$port/api/v1/items");
+    say $res.content;
+}
+
+sub make-domain($domain) {
+    my $rq = $c.put;
+    $rq.url("http://$host:$port/api/v1/items/$domain");
+    my $res = $rq.run;
+    say $res.content;
+}
+
+sub list-sortings($domain) {
+    my $res = $c.get("http://$host:$port/api/v1/sortings/$domain");
+    say $res.content;
+}
+
+sub make-sorting($domain, $sorting) {
+    my $rq = $c.put;
+    $rq.url("http://$host:$port/api/v1/sortings/$domain/$sorting");
+    $rq.set-content(to-json({nid => 'root', filter => 'tag1/tag3', children => [
+                                {nid => 'c1', filter => 'tag2'},
+                                {nid => 'c2', filter => ''}
+                        ]}));
+    my $res = $rq.run;
+    say $res.content;
+}
+
+sub list-boards($domain) {
+    my $res = $c.get("http://$host:$port/api/v1/boards/$domain");
+    say $res.content;
+}
+
+sub make-board($domain, $board) {
+    my $rq = $c.put;
+    $rq.url("http://$host:$port/api/v1/boards/$domain/$board");
+    $rq.set-content('{}');
+    my $res = $rq.run;
+    say $res.content;
+}
+
+sub MAIN($command!) {
+    if ($command eq 'list-domains') {
+        list-domains;
+    }
+    elsif ($command eq 'make-domain') {
+        make-domain('test');
+    }
+    elsif ($command eq 'list-sortings') {
+        list-sortings('test');
+    }
+    elsif ($command eq 'make-sorting') {
+        make-sorting('test', 'sorting1');
+    }
+    elsif ($command eq 'list-boards') {
+        list-boards('test');
+    }
+    elsif ($command eq 'make-board') {
+        make-board('test', 'board1');
+    }
+}

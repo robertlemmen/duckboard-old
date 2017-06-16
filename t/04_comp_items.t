@@ -18,7 +18,7 @@ say "working in $tmpdir...";
 
 my $store = Duckboard::Store.new("$tmpdir/store");
 my $logic = Duckboard::Logic.new($store);
-my $srv = Duckboard::Server.new($port, $logic);
+my $srv = Duckboard::Server.new($port, $logic, Nil);
 
 $store.start;
 $logic.start;

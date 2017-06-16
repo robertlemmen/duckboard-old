@@ -85,6 +85,7 @@ Sort Layer
   computes the necessary tag changes
 XXX ordering within a sort leaf
 XXX changes with long-poll
+XXX sample JSON and details
 
 - the API would then look like:
   - GET /api/v1/sortings/<domain>          list sortings available
@@ -105,4 +106,14 @@ Board Layer
 - each domain can have a set of "boards"
 - each board consists of a set of widgets, some of which are layout components like grids
 - an important widget represents a sorting from the sort layer as a configurable grid.
-XXX
+XXX API
+XXX JSON structure, needs to be extensible. start with "sorted" part
+
+
+UI Layer
+--------
+- any path that does start with /ui is used for the graphical UI
+  - /ui                             lists the domains 
+  - /ui/<domain>                    lists the boards of this domain
+  - /ui/<domain>/<board>            renders the board in question
+- this will require some files to be accessible under /static as well, css, js, images ...

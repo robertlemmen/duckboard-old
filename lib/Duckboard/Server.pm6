@@ -12,11 +12,12 @@ my $log = Duckboard::Logging.new('server');
 
 has $.httpd;
 has $.logic;
+has $.ui;
 
-method new($port, $logic) {
+method new($port, $logic, $ui) {
     $log.info("Setting up HTTP server on port $port");
     return self.bless(httpd => HTTP::Server::Async.new(port => $port),
-                      logic => $logic);
+                      logic => $logic, ui => $ui);
 }
 
 method start {
@@ -219,6 +220,59 @@ method !rq-handler($request, $response) {
             self!mk-error-response($response, 405, "Method $method not allowed on $path");
             return;
         }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/boards\/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        if ($method eq 'GET') {
+            my $boards = $!logic.list-boards($domain);
+            self!mk-json-response($response, $boards);
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/boards\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        my $id ~= $1;
+        # XXX at??
+
+        if ($method eq 'GET') {
+            my $board = $!logic.get-board($domain, $id);
+            if (defined $board) {
+                self!mk-json-response($response, $board);
+            }
+            else {
+                self!mk-error-response($response, 404, "Board '$id' in domain '$domain' not found");
+            }
+            return;
+        }
+        elsif ($method eq 'PUT') {
+            my $board = from-json($body);
+            $!logic.put-board($domain, $id, $board);
+            self!mk-ok-response($response);
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/ui \/?$/) {
+        $!ui.list-domains($response);
+        return;
+    }
+    elsif ($path ~~ /^ \/ui\/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        $!ui.list-boards($response, $domain);
+        return;
+    }
+    elsif ($path ~~ /^ \/ $/) {
+        $response.status = 301;
+        $response.headers{'Location'} = '/ui';
+        $response.close;
+        return;
     }
 
     self!mk-error-response($response, 404, "URI path $path does not match any endpoint");
