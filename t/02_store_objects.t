@@ -28,6 +28,7 @@ my $id = $short-item{'id'};
 my $new-item = $store.put-object('default', Supported-Types::items, $id, {title => 'first item v2', tags => [], description => 'test234'});
 cmp-ok($new-item{'title'}, 'eq', 'first item v2', "Title on item can be updated");
 cmp-ok($short-item{'timestamp'}, '<', $new-item{'timestamp'}, "After updating an item, the timstamp is increased");
+cmp-ok($store.list-objects('default', Supported-Types::items).elems, '==', 1, "list of objects for domain now contains an entry");
 
 # XXX check it
 # XXX check item exists on disk
@@ -35,5 +36,11 @@ cmp-ok($short-item{'timestamp'}, '<', $new-item{'timestamp'}, "After updating an
 # XXX this is too simple, but as a start...
 $id = $short-item<id>;
 isnt($store.get-object('default', Supported-Types::items, $id), Nil, "get-object for created item $id must not return Nil");
+
+# when the store is restarted, I see the same items
+$store.stop;
+$store = Duckboard::Store.new("$tmpdir/store");
+$store.start;
+cmp-ok($store.list-objects('default', Supported-Types::items).elems, '==', 1, "list of objects still the same after restart");
 
 done-testing;
