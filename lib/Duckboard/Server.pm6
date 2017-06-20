@@ -69,13 +69,25 @@ method !mk-json-response($response, $data) {
     $response.close;
 }
 
+sub is-under($path, $base) {
+    # XXX this could be done better with .child or IO::Path::ChildSecure
+    return $path.absolute.starts-with($base.absolute);
+}
+
+sub content-type-from-file($filename) {
+    given $filename {
+        when /\.css$/ { return "text/css"; }
+    }
+    return "text/html";
+}
+
 method !rq-handler($request, $response) {
+    state $static-dir = $*PROGRAM.dirname.IO.child("static").resolve;
     my $method = $request.method;
     my $headers = $request.headers;
     my $body = $request.data.decode('UTF-8');
     my $uri = URI.new($request.uri);
     my $path = uri-unescape($uri.path);
-    # XXX funky, if i line-break before .comb, then the >> breaks...
     # XXX we also need to work out exactly what the character classes should be
     my $query-args = %(%($uri.query.split('&').comb(/(<[\w\%+]>+) '=' (<[!\w\%+\/\(\)\+]>+)/, :match)>>.Slip>>.Str)
                         .kv.map(-> $arg { uri-unescape($arg) }));
@@ -90,7 +102,30 @@ method !rq-handler($request, $response) {
 
     $log.trace("$method $path " ~ $uri.query);
 
-    if ($path ~~ /^ \/api\/v1\/items \/?$/) {
+    if ($path ~~ /^ \/(static\/.+) /) {
+        my $filename = $0;
+        if ($method eq 'GET') {
+            my $file = IO::Path.new($filename).resolve;
+            if (!is-under($file, $static-dir)) {
+                self!mk-error-response($response, 403, "Access to $filename not allowed");
+            }
+            elsif ($file.e) {
+                $response.status = 200;
+                $response.write($file.slurp(:bin));
+                $response.headers{'Content-Type'} = content-type-from-file($filename);
+                $response.close;
+            }
+            else {
+                self!mk-error-response($response, 404, "File $filename not found");
+            }
+            return;
+        }
+        else {
+            self!mk-error-response($response, 405, "Method $method not allowed on $path");
+            return;
+        }
+    }
+    elsif ($path ~~ /^ \/api\/v1\/items \/?$/) {
         if ($method eq 'GET') {
             my $domains = $!logic.list-domains;
             self!mk-json-response($response, $domains);
@@ -266,6 +301,12 @@ method !rq-handler($request, $response) {
     elsif ($path ~~ /^ \/ui\/ (<[\w-]-[^\/]>+) \/?$/) {
         my $domain ~= $0;
         $!ui.list-boards($response, $domain);
+        return;
+    }
+    elsif ($path ~~ /^ \/ui\/ (<[\w-]-[^\/]>+) \/ (<[\w-]-[^\/]>+) \/?$/) {
+        my $domain ~= $0;
+        my $board ~= $1;
+        $!ui.render-board($response, $domain, $board);
         return;
     }
     elsif ($path ~~ /^ \/ $/) {

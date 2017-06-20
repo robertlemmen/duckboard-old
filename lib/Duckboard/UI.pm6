@@ -51,4 +51,5 @@ method list-boards($response, $domain) {
 
 method render-board($response, $domain, $board) {
     $log.trace("render-board domain=$domain board=$board");
+    self!html-response($response, $!tt.process('render-board', dom => $domain, board => $board));
 }

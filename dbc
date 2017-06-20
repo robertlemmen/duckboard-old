@@ -47,7 +47,10 @@ sub list-boards($domain) {
 sub make-board($domain, $board) {
     my $rq = $c.put;
     $rq.url("http://$host:$port/api/v1/boards/$domain/$board");
-    $rq.set-content('{}');
+    $rq.set-content(to-json({content => {
+                                    type => 'sorted-tree',
+                                    id => 'sorting1'
+                                }}));
     my $res = $rq.run;
     say $res.content;
 }
