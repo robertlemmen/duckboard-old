@@ -72,6 +72,9 @@ XXX at some point in the future we could introduce a special "archived" property
 that is used at the store layer to separate the 90% used form the rest, unclear
 at the moment whether that is necesary
 
+XXX we need some sort of relationship API and store that associates two (or more?) items, and 
+where the data gets mixed into all items affected
+
 Sort Layer
 ----------
 - each domain can have a set of "sortings", which organises items by tags

@@ -32,8 +32,8 @@ sub make-sorting($domain, $sorting) {
     my $rq = $c.put;
     $rq.url("http://$host:$port/api/v1/sortings/$domain/$sorting");
     $rq.set-content(to-json({nid => 'root', filter => 'tag1/tag3', children => [
-                                {nid => 'c1', filter => 'tag2'},
-                                {nid => 'c2', filter => ''}
+                                {nid => 'c1', filter => 'tag2' },
+                                {nid => 'c2', filter => '' }
                         ]}));
     my $res = $rq.run;
     say $res.content;
@@ -48,30 +48,54 @@ sub make-board($domain, $board) {
     my $rq = $c.put;
     $rq.url("http://$host:$port/api/v1/boards/$domain/$board");
     $rq.set-content(to-json({content => {
-                                    type => 'sorted-tree',
-                                    id => 'sorting1'
+                                    type => 'sorted-board',
+                                    sorting => 'sort1',
+                                    overrides => {
+                                    }
                                 }}));
     my $res = $rq.run;
     say $res.content;
 }
 
-sub MAIN($command!) {
+sub make-sample() {
+    make-domain('sample');
+    make-sorting('sample', 'sort1');
+    make-board('sample', 'board1');
+}
+
+sub make-item($domain, $title) {
+    my $rq = $c.post;
+    $rq.url("http://$host:$port/api/v1/items/$domain");
+    $rq.set-content(to-json({title => $title,
+                             tags => '',
+                                }));
+    my $res = $rq.run;
+    say $res.content;
+}
+
+multi sub MAIN($command!, $arg = 'test', $arg2 = '') {
     if ($command eq 'list-domains') {
         list-domains;
     }
     elsif ($command eq 'make-domain') {
-        make-domain('test');
+        make-domain($arg);
     }
     elsif ($command eq 'list-sortings') {
-        list-sortings('test');
+        list-sortings($arg);
     }
     elsif ($command eq 'make-sorting') {
-        make-sorting('test', 'sorting1');
+        make-sorting($arg, 'sorting1');
     }
     elsif ($command eq 'list-boards') {
-        list-boards('test');
+        list-boards($arg);
     }
     elsif ($command eq 'make-board') {
-        make-board('test', 'board1');
+        make-board($arg, 'board1');
+    }
+    elsif ($command eq 'make-sample') {
+        make-sample();
+    }
+    elsif ($command eq 'make-item') {
+        make-item($arg, $arg2);
     }
 }

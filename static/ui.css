@@ -1,3 +1,113 @@
+html,body {
+    font-family:Verdana,sans-serif;
+    font-size: 12pt;
+    line-height: 1.1;
+}
+
+div.hcontainer {
+    display: flex;
+    margin: 0pt;
+    padding: 0pt;
+    padding-top: .5em;
+    padding-bottom: .5em;
+}
+
+div.cell { 
+    margin: 0em;
+    padding: .5em;
+    display: inline-block;
+    min-height: 6em;
+    vertical-align: top;
+}
+
+hr.vertical {
+    border: 0px;
+    border-right: 2px solid black;
+    width: 0pt;
+    margin: 0pt;
+}
+
+hr.horizontal {
+    border: 0px;
+    border-top: 2px solid black;
+    margin: 0pt;
+}
+
+div.cellHeader {
+    font-size: 12pt;
+    display: block;
+    clear: both;
+    text-align: center;
+    font-weight: bold;
+}
+
+div.hcontainer > * {
+    vertical-align: top;
+}
+
+div.hcontainerHeader {
+    font-size: 18pt;
+    font-weight: bold;
+    width: 1.5em;
+    border-right: 2px solid black;
+    overflow: hidden;
+    min-height: 9em;
+}
+
+div.hcontainerHeader > h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    display: inline;
+    position: relative;
+    float: right;
+    -moz-transform: rotate(270deg);  /* FF3.5+ */
+    -o-transform: rotate(270deg);  /* Opera 10.5 */
+    -webkit-transform: rotate(-90deg);  /* Saf3.1+, Chrome */
+    -moz-transform-origin: 100% 100%;
+    -o-transform-origin: 100% 100%;
+    -webkit-transform-origin: 100% 100%;
+    top: -.5em;
+    margin: .2em;
+}
+
+div.sticker { 
+    margin: .2em;
+    padding: .2em;
+    border: 1pt solid black;
+    border-top: 3pt solid blue;
+/*    background-color: gray; */
+    display: inline-block;
+    cursor: move;
+    width: 10em;
+    height: 5em;
+}
+
+
+div.sticker > p { 
+    font-size: 10pt;
+    margin: 0px;
+}
+
+div.ghostSticker > p { 
+    font-size: 10pt;
+    margin: 0px;
+}
+
+div.ghostSticker { 
+    pointer-events: none; 
+    margin: .2em;
+    padding: .2em;
+    border: 1pt dotted black;
+    /* the .4m is .2em stadard padding + 3pt sticker top border. ugh */
+    padding-top: .4em;
+    display: inline-block;
+    opacity: .5;
+    cursor: move;
+    width: 10em;
+    height: 5em;
+}
+
+/* should not be needed anymore */
 div.sortedTreeCell { 
     margin: 10pt;
     padding: 10pt;
