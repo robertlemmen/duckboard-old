@@ -40,13 +40,27 @@ method !html-response($response, $content) {
 method list-domains($response) {
     $log.trace("list-domains");
     my $domains = $!logic.list-domains;
-    self!html-response($response, $!tt.process('list-domains', domains => $domains));
+    if $domains.elems == 1 {
+        $response.status = 307;
+        $response.headers{'Location'} = "/ui/$domains[0]";
+        $response.close;
+    }
+    else {
+        self!html-response($response, $!tt.process('list-domains', domains => $domains));
+    }
 }
 
 method list-boards($response, $domain) {
     $log.trace("list-boards domain=$domain");
     my $boards = $!logic.list-boards($domain);
-    self!html-response($response, $!tt.process('list-boards', dom => $domain, boards => $boards));
+    if $boards.elems == 1 {
+        $response.status = 307;
+        $response.headers{'Location'} = "/ui/$domain/$boards[0]{'id'}";
+        $response.close;
+    }
+    else {
+        self!html-response($response, $!tt.process('list-boards', dom => $domain, boards => $boards));
+    }
 }
 
 method render-board($response, $domain, $board) {
