@@ -100,6 +100,12 @@ XXX sample JSON and details
                                            necessary
   - GET /api/v1/sorted/<domain>/<id>       get items from this domain sorted
                                            by sort <id>
+  - POST /api/v1/sorted/<domain>/<id>/move-item?item=<A>&nid=<B>&after=<C>
+                                           request item with id A to be modified such that
+                                           it is now under node B, after item with id C (or 
+                                           first if that does not exist. returns 200/400/500,
+                                           new state can be queried or gotten from 
+                                           long-poll/watch
 XXX this one accepts PUT without previous existence, the other one doesn't
     perhaps this should be consistent?
 XXX at

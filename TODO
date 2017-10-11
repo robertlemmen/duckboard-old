@@ -1,0 +1,6 @@
+- sort items in "sorted". the order is dependent on the sorted itself
+- move API implementation
+- support of that move in the UI
+- non-blocking progress bar in the UI
+- UI to vonverge the UI state on current sorted state
+- long-poll for changes in sorted

@@ -196,6 +196,13 @@ method get-sorted($domain, $id, $at = Nil, $filter-spec = Nil) {
     if (defined $sorting) {
         my $items = self.list-items($domain, $at, $filter-spec);
         my ($sorted, $remaining) = self!sort-items($sorting, $items);
+        my $timestamp = $sorting{'timestamp'};
+        for @($items) -> $i {
+            if $i{'timestamp'} > $timestamp {
+                $timestamp = $i{'timestamp'};
+            }
+        }
+        $sorted{'timestamp'} = $timestamp;
         return $sorted;
     }
     else {

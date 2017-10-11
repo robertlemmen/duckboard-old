@@ -6,6 +6,7 @@ use lib $*PROGRAM.dirname.IO.child("lib").path;
 
 use HTTP::Client;
 use JSON::Tiny;
+use File::Temp;
 
 my $c = HTTP::Client.new;
 my $host = '0.0.0.0';
@@ -73,6 +74,31 @@ sub make-item($domain, $title) {
     say $res.content;
 }
 
+sub edit-item($domain, $id) {
+    my $rq = $c.get;
+    $rq.url("http://$host:$port/api/v1/items/$domain/$id");
+    my $res = $rq.run;
+    my ($fname, $fhandle) = tempfile;
+    if $res.success {
+        # XXX out in temp file, edit vim EDITOR, put back
+        my $data = from-json($res.content);
+        $data{'id'}:delete;
+        $fhandle.print(to-json($data));
+        # XXX parse, remove id, pretty-print
+        my $proc = shell "\$EDITOR $fname";
+        $proc.sink;
+        my $new-content = $fhandle.IO.slurp;
+        $rq = $c.put;
+        $rq.url("http://$host:$port/api/v1/items/$domain/$id");
+        $rq.set-content($new-content);
+        $res = $rq.run;
+        say $res.status ~ " " ~ $res.message;
+    }
+    else {
+        say $res.status ~ " " ~ $res.message;
+    }
+}
+
 multi sub MAIN($command!, $arg = 'test', $arg2 = '') {
     if ($command eq 'list-domains') {
         list-domains;
@@ -97,5 +123,8 @@ multi sub MAIN($command!, $arg = 'test', $arg2 = '') {
     }
     elsif ($command eq 'make-item') {
         make-item($arg, $arg2);
+    }
+    elsif ($command eq 'edit-item') {
+        edit-item($arg, $arg2);
     }
 }

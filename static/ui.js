@@ -60,10 +60,15 @@ function populateSortedTree(parentContainer, spec, orientation) {
     alert(JSON.stringify(spec));
     for (var i = 0; i < children.length; i++) {
         if (i > 0) {
-            parentContainer.appendChild(makeVertHr());
+            hcont.appendChild(makeVertHr());
         }
         var cell = makeCell("cell-" + children[i].nid + "-" + i, 2, children[i].nid);
         hcont.appendChild(cell);
+        for (var j = 0; j < children[i].items.length; j++) {
+            var item = children[i].items[j];
+            cell.children[1].appendChild(makeSticker(item.title));
+        }
+        fixCellBreaks(cell.children[1]);
         
 /*        childDiv = document.createElement('div');
         childDiv.id = children[i].nid; // XXX unique
@@ -103,11 +108,11 @@ function init() {
         appendSticker(start_cell, makeSticker("sticker-" + i));
     }
     fixCellBreaks(start_cell);
-}*/
+}
 
 function appendSticker(cell, sticker) {
     cell.appendChild(sticker);
-}
+}*/
 
 function fixCellBreaks(cell) {
     var cols = cell.getAttribute("x_width");
@@ -220,7 +225,7 @@ function makeSticker(id) {
 }
 
 function log(text) {
-    var lines = document.getElementById("log").innerHTML.split('\n');
+/*    var lines = document.getElementById("log").innerHTML.split('\n');
     var start = 0;
     var end = lines.length;
     if (end > 15) {
@@ -231,7 +236,7 @@ function log(text) {
         result += lines[i] + "\n";
     }
     result += text + "<br/>\n";
-    document.getElementById("log").innerHTML = result;
+    document.getElementById("log").innerHTML = result;*/
 }
 
 function fixContainerHeight(cont) {
